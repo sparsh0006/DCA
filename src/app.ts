@@ -90,13 +90,21 @@ app.get('/api/fetchsonicprice', async (req: Request, res: Response): Promise<any
 // Endpoint to analyze token and get investment recommendation
 app.get('/api/analyze', async (req: Request, res: Response): Promise<any> => {
   try {
-    const tokenId: string = 'sonic-3';
+    const tokenId: string = 'sonic-3'; // Define the token ID
     const analysis = await analyzeTokenRisk(tokenId);
+    console.log('Analysis result:', analysis);
+    
+    // Make sure we have both priceDropFactor and priceDrop values
+    // The analyzeTokenRisk function should already include these in the result
     
     return res.status(200).json({
       success: true,
       token_id: tokenId,
-      analysis,
+      analysis: {
+        ...analysis,
+        // If priceDrop isn't directly returned from analyzeTokenRisk but is calculated within it,
+        // you can add it here if needed
+      },
       timestamp: new Date().toISOString()
     });
   } catch (error) {

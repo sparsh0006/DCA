@@ -5,6 +5,7 @@ const currentPriceElement = document.getElementById('current-price');
 const refreshButton = document.getElementById('refresh-btn');
 const analysisContent = document.getElementById('analysis-content');
 const movingAverageElement = document.getElementById('moving-average');
+const priceDropElement = document.getElementById('price-drop-info');
 const investButtons = document.querySelectorAll('.invest-btn');
 const transactionContainer = document.getElementById('transaction-container');
 const transactionStatus = document.getElementById('transaction-status');
@@ -49,6 +50,11 @@ async function fetchPrice() {
 }
 
 // Fetch token analysis and recommendations
+// Updated code snippet for app.js to properly display price drops
+// This ensures negative values (price increases) are shown correctly
+
+// In the fetchAnalysis function, update the part that handles the price drop display:
+
 async function fetchAnalysis() {
   try {
     // Show loading state
@@ -78,6 +84,37 @@ async function fetchAnalysis() {
       // Update moving average display
       movingAverageElement.textContent = `7-Day Moving Average: $${data.analysis.movingAverage.toFixed(4)}`;
       
+      // Update price drop information if available
+      if (data.analysis.hasOwnProperty('priceDropFactor')) {
+        // Get the price drop value (could be positive for drops or negative for rises)
+        const priceDrop = data.analysis.priceDrop;
+        
+        // Determine text and styling based on whether it's a drop or rise
+        let priceChangeText, priceChangeClass, iconHTML;
+        
+        if (priceDrop > 0) {
+          // It's a price drop (positive value)
+          priceChangeText = `${priceDrop.toFixed(2)}% ↓`;
+          priceChangeClass = getPriceDropClass(data.analysis.priceDropFactor);
+          iconHTML = '<i class="bi bi-arrow-down"></i>';
+        } else {
+          // It's a price rise (negative value)
+          priceChangeText = `${Math.abs(priceDrop).toFixed(2)}% ↑`;
+          priceChangeClass = 'text-success';
+          iconHTML = '<i class="bi bi-arrow-up"></i>';
+        }
+        
+        priceDropElement.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center">
+            <span>1-Day Price Change: <strong class="${priceChangeClass}">${priceChangeText}</strong></span>
+            <span>Price Drop Factor: <strong class="${getPriceDropClass(data.analysis.priceDropFactor)}">${data.analysis.priceDropFactor.toFixed(1)}</strong></span>
+          </div>
+        `;
+        priceDropElement.classList.remove('d-none');
+      } else {
+        priceDropElement.classList.add('d-none');
+      }
+      
       // Highlight the recommended option
       highlightRecommendedOption(data.analysis.riskLevel);
     } else {
@@ -90,7 +127,15 @@ async function fetchAnalysis() {
         <p>Unable to generate investment analysis. Using default medium risk profile.</p>
       </div>
     `;
+    priceDropElement.classList.add('d-none');
   }
+}
+
+// Helper function to determine the appropriate color class based on price drop factor
+function getPriceDropClass(factor) {
+  if (factor < 1.4) return 'text-success';
+  if (factor < 2.0) return 'text-warning';
+  return 'text-danger';
 }
 
 // Process investment
